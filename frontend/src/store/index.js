@@ -19,6 +19,9 @@ const store = new Vuex.Store({
     },
     initAllRoutes(state, routes) {
       state.allRoutes = state.allRoutes.concat(routes)
+    },
+    resetAllRouts(state) {
+      state.allRoutes = staticRoutes
     }
   },
   actions: {
@@ -31,6 +34,7 @@ const store = new Vuex.Store({
             console.log(rsp.data)
             commit('initRoles', rsp.data.roleNames)
             commit('initPermissions', rsp.data.permissionNames)
+            commit('resetAllRouts')
             resolve(rsp.data)
           })
           .catch(err => reject(err))

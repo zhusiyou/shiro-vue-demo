@@ -3,6 +3,8 @@ package com.sv.shirovue.controller;
 import com.alibaba.fastjson.JSONObject;
 import com.sv.shirovue.bean.User;
 import com.sv.shirovue.service.LoginService;
+import com.sv.shirovue.service.MenuService;
+import lombok.AllArgsConstructor;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.UsernamePasswordToken;
@@ -11,6 +13,7 @@ import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.apache.shiro.authz.annotation.RequiresRoles;
 import org.apache.shiro.subject.Subject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -30,8 +33,11 @@ public class LoginController {
     @Autowired
     private LoginService loginService;
 
+    @Autowired
+    private MenuService menuService;
+
     @RequestMapping("/login")
-    public JSONObject login(User user) {
+    public JSONObject login(@RequestBody User user) {
 
         JSONObject result = new JSONObject();
 
@@ -68,6 +74,8 @@ public class LoginController {
             result.put("permissionNames", permissionNames);
 
             result.put("msg", "login success");
+
+            result.put("menus", menuService.getMenus(new String[]{}));
         } catch (AuthenticationException e) {
             e.printStackTrace();
             result.put("msg", "账号或密码错误！");

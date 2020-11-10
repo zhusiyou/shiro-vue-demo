@@ -1,31 +1,51 @@
 <template>
-  <div>
-    <!-- <form> -->
-    <input v-model="userinfo.username" type="text" placeholder="账号">
-    <br>
-    <input v-model="userinfo.password" type="password" placeholder="密码">
-    <br>
-    <button type="button" @click="login">login</button>
-    <!-- </form> -->
-  </div>
+  <a-form layout="inline" :model="formInline" @submit="handleSubmit" >
+    <a-form-item>
+      <a-input v-model:value="formInline.userName" placeholder="Username">
+        <template v-slot:prefix><UserOutlined style="color:rgba(0,0,0,.25)"/></template>
+      </a-input>
+    </a-form-item>
+    <a-form-item>
+      <a-input v-model:value="formInline.password" type="password" placeholder="Password">
+        <template v-slot:prefix><LockOutlined style="color:rgba(0,0,0,.25)"/></template>
+      </a-input>
+    </a-form-item>
+    <a-form-item>
+      <a-button
+        type="primary"
+        html-type="submit"
+        :disabled="formInline.userName === '' || formInline.password === ''"
+      >
+        Log in
+      </a-button>
+    </a-form-item>
+  </a-form>
 </template>
 <script>
+import { UserOutlined, LockOutlined } from '@ant-design/icons-vue';
+// import { saveUserInfo } from '@/utils/localStorage.js'
+import types from '@/store/types.js'
 export default {
+  components: {
+    UserOutlined,
+    LockOutlined,
+  },
   data() {
     return {
-      userinfo: {
-        username: '',
-        password: ''
-      }
-    }
+      formInline: {
+        userName: 'zhudawei',
+        password: '123456',
+      },
+    };
   },
   methods: {
-    login() {
-      this.$store.dispatch('login', this.userinfo)
-        .then(() => {
-          this.$router.push('/')
-        })
-    }
-  }
-}
+    handleSubmit() {
+      this.$store.dispatch(types.LOGIN, this.formInline)
+            .then(data=>{
+                console.log(data)
+                this.$router.push({name: 'Account'})
+            })
+    },
+  },
+};
 </script>

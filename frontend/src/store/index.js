@@ -1,58 +1,93 @@
-import Vue from 'vue'
-import Vuex from 'vuex'
-import axios from 'axios'
-import { dynamicRoutes, staticRoutes } from '../router'
+import { createStore } from 'vuex'
+import types from '@/store/types.js'
+import router from '@/router'
+import service from '@/api/request.js'
+import { getUserInfo, saveUserInfo } from '@/utils/localStorage.js'
 
-Vue.use(Vuex)
-const store = new Vuex.Store({
-  state: {
+const state = {
+    inited: false,
+    isLogin: false,
+    routes: [],
     roles: [],
-    permissions: [],
-    allRoutes: staticRoutes
-  },
-  mutations: {
-    initRoles(state, roles) {
-      state.roles = roles
+    permissions: []
+}
+
+const getters = {
+    routes: state => {
+        return state.routes
     },
-    initPermissions(state, permissions) {
-      state.permissions = permissions
+    isLogin: state => {
+        // commit()
+        return state.isLogin
     },
-    initAllRoutes(state, routes) {
-      state.allRoutes = state.allRoutes.concat(routes)
-    },
-    resetAllRouts(state) {
-      state.allRoutes = staticRoutes
+    isInited: state => {
+        return state.inited
     }
-  },
-  actions: {
-    login({ commit }, userinfo) {
-      return new Promise((resolve, reject) => {
-        // axios.get('http://localhost:8080/login?userName=wsl&password=123456')
-        axios.get(`http://localhost:8080/login?userName=${userinfo.username}&password=${userinfo.password}`)
-          .then(rsp => {
-            // eslint-disable-next-line no-console
-            console.log(rsp.data)
-            commit('initRoles', rsp.data.roleNames)
-            commit('initPermissions', rsp.data.permissionNames)
-            commit('resetAllRouts')
-            resolve(rsp.data)
-          })
-          .catch(err => reject(err))
-      })
-    },
-    generateRoutes({ commit }, roles) {
-      return new Promise(resolve => {
-        let accessedRoutes
-        if (roles.includes('admin')) {
-          accessedRoutes = dynamicRoutes || []
-        } else {
-          accessedRoutes = [dynamicRoutes[1]]
+}
+
+const convertToRoutes = function(menus){
+    if(!menus)return []
+    const routes = []
+    menus.forEach(element => {
+        const route = {
+            name: element.name,
+            path: element.path,
+            meta: element.meta,
+            component: ()=>import (`@/views${element.component}`),
+            children: convertToRoutes(element.children)
         }
-        commit('initAllRoutes', accessedRoutes)
-        resolve(accessedRoutes)
-      })
+        routes.push(route)
+    })
+    return routes;
+}
+
+const mutations = {
+    [types.RELOAD](state){
+        state.inited = true
+        const userInfo = getUserInfo()
+        if(userInfo){
+            this.commit(types.LOGIN, userInfo)             
+        }
+    },
+    [types.LOGIN](state, loginResult){        
+        state.isLogin = loginResult.msg.indexOf('success')>=0
+        if(!state.isLogin)return;
+
+        //route
+        const tmpRoutes = convertToRoutes(loginResult.menus)
+        state.routes = tmpRoutes
+        tmpRoutes.forEach(el=>router.addRoute(el))
+
+        state.permissions = loginResult.permissionNames
+        state.roles = loginResult.roleNames
+    },
+}
+
+const actions = {
+    login({commit}, loginObj){   
+        return new Promise((resolve, reject)=>{
+            service.post('/login', loginObj).then((response)=>{  
+                const data = response.data  
+                if(data.msg.indexOf('success')==-1){
+                    alert(data.msg);
+                    return;
+                }
+                commit(types.LOGIN, data)
+                saveUserInfo(data)
+                resolve(data)
+            }).catch((err)=>{
+                console.log(err)
+                reject(err)
+            })
+        })
     }
-  }
+}
+
+const store = createStore({
+    state,
+    getters,
+    mutations,
+    actions
 })
 
 export default store

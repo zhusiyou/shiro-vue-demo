@@ -1,22 +1,21 @@
-import Vue from 'vue'
+import { createApp } from 'vue'
 import App from './App.vue'
+
+import Antd from 'ant-design-vue';
+import 'ant-design-vue/dist/antd.css';
+
 import router from './router'
 import store from './store'
 
-import axios from 'axios'
+import directives from './directives.js'
 
-import VueAxios from 'vue-axios'
-import './assets/css/print.css'
-import './assets/css/edit.css'
+const app = createApp(App)
+.use(Antd)
+.use(router)
+.use(store)
 
-import './permission'
+directives.forEach((value, key)=>{
+    app.directive(key, value)
+})
 
-Vue.use(VueAxios, axios)
-
-Vue.config.productionTip = false
-
-new Vue({
-  router,
-  store,
-  render: h => h(App)
-}).$mount('#app')
+app.mount('#app')
